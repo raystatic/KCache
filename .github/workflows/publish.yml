@@ -7,27 +7,50 @@ on:
 
 jobs:
   publish:
+    name: Publish KMP Library
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: '17'
 
-      - uses: gradle/gradle-build-action@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
 
-      - name: Setup GPG
+      #######################################################
+      #                   IMPORT GPG KEY                     #
+      #######################################################
+      - name: Import GPG private key
         run: |
-          echo "$GPG_PRIVATE_KEY" > private.key
+          echo ">>> Writing GPG key to temporary file"
+          cat > private.key << 'EOF'
+          $GPG_PRIVATE_KEY
+          EOF
+          echo ">>> Importing private.key"
           gpg --batch --import private.key
-
-      - name: Publish
-        run: ./gradlew publishAllPublicationsToMavenCentralRepository
+          echo ">>> Successfully imported GPG key"
         env:
-          MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      #######################################################
+      #                 RUN GRADLE PUBLISH                   #
+      #######################################################
+      - name: Publish to Sonatype
+        run: ./gradlew publishAllPublicationsToSonatype closeAndReleaseSonatypeStagingRepository
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+
+      #######################################################
+      #                VERIFY SIGNING INFO                   #
+      #######################################################
+      - name: List imported GPG keys
+        run: gpg --list-secret-keys --keyid-format=long

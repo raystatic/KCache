@@ -23,8 +23,8 @@ nexusPublishing {
     repositories {
         create("mavenCentral") {
             // NEW Publisher API (no staging)
-            nexusUrl.set(uri("https://central.sonatype.com/api/v1/publisher/"))
-            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/api/v1/publisher/"))
+            nexusUrl.set(uri("https://central.sonatype.com/api/v1/publisher"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/api/v1/publisher"))
 
             username.set(System.getenv("MAVEN_CENTRAL_TOKEN_USERNAME"))
             password.set(System.getenv("MAVEN_CENTRAL_TOKEN_PASSWORD"))

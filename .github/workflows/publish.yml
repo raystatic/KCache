@@ -35,15 +35,11 @@ jobs:
 
       - name: Import GPG private key
         run: |
-          echo ">>> Writing GPG key to temporary file"
-          cat > private.key << 'EOF'
-          $GPG_PRIVATE_KEY
-          EOF
-          echo ">>> Importing private.key"
+          echo "$GPG_PRIVATE_KEY" > private.key
           gpg --batch --import private.key
-          echo ">>> Successfully imported GPG key"
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
 
       #######################################################
       #                 RUN GRADLE PUBLISH                   #

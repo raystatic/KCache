@@ -6,17 +6,17 @@ plugins {
     signing
 }
 
-group = "com.raystatic.filecache"
+group = "io.github.raystatic"
 version = "1.0.0"
 
 kotlin {
-    android {
-        publishLibraryVariants("release", "debug")
+
+    androidTarget {
+        publishLibraryVariants("release") // ONLY release allowed
     }
-    
+
     iosArm64()
     iosSimulatorArm64()
-    
     jvm()
 
     sourceSets {
@@ -26,27 +26,32 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
             }
         }
+
         val androidMain by getting
+
         val iosMain by creating {
             dependsOn(commonMain)
         }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+
         val jvmMain by getting
     }
 }
 
 android {
-    namespace = "com.raystatic.filecache"
+    namespace = "io.github.raystatic.kcache"
     compileSdk = 34
-    
+
     defaultConfig {
         minSdk = 21
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    
+
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -54,45 +59,23 @@ android {
     }
 }
 
+// No artifactId overrides → root handles it
 publishing {
-    publications.withType<MavenPublication> {
-        pom {
-            name.set("KMP File Cache")
-            description.set("A Kotlin Multiplatform file-based cache library with LRU eviction and TTL support")
-            url.set("https://github.com/raystatic/kmp-file-cache")
-            
-            licenses {
-                license {
-                    name.set("The Apache License, Version 2.0")
-                    url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                }
-            }
-            
-            developers {
-                developer {
-                    id.set("raystatic")
-                    name.set("RayStatic")
-                    email.set("info@raystatic.com")
-                }
-            }
-            
-            scm {
-                connection.set("scm:git:git://github.com/raystatic/kmp-file-cache.git")
-                developerConnection.set("scm:git:ssh://github.com:raystatic/kmp-file-cache.git")
-                url.set("https://github.com/raystatic/kmp-file-cache/tree/main")
-            }
-        }
+    publications.withType<MavenPublication>().configureEach {
+        groupId = project.group.toString()
+        version = project.version.toString()
     }
 }
 
+// GitHub Actions signing
 signing {
-    val signingKeyId: String? = project.findProperty("signing.keyId") as String?
-    val signingPassword: String? = project.findProperty("signing.password") as String?
-    val signingKey: String? = project.findProperty("signing.secretKey") as String?
-    
-    if (signingKeyId != null && signingKey != null) {
-        useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
+    val signingKey = System.getenv("GPG_PRIVATE_KEY")
+    val signingPassword = System.getenv("GPG_PRIVATE_KEY_PASSWORD")
+
+    if (signingKey != null && signingPassword != null) {
+        useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publishing.publications)
+    } else {
+        println("⚠️ GPG signing not configured for this module.")
     }
 }
-

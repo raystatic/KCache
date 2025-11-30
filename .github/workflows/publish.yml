@@ -3,41 +3,41 @@ name: Publish to Maven Central (New API)
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v3
 
-      # ---- IMPORT GPG KEY ----
-      - name: Import GPG private key
+      - name: Import GPG key
         run: |
           echo "$GPG_PRIVATE_KEY" > private.key
           gpg --batch --yes --import private.key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Verify GPG Keys
-        run: gpg --list-secret-keys --keyid-format=long
-
-      # ---- 🚀 PUBLISH (NEW API) ----
-      - name: Publish to Maven Central
-        run: ./gradlew publish --no-daemon --stacktrace
+      # Build the bundle.zip (required by new API)
+      - name: Build bundle
+        run: ./gradlew :shared:bundleReleaseArtifacts
         env:
-          MAVEN_CENTRAL_TOKEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}
-          MAVEN_CENTRAL_TOKEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+
+      # Upload using NEW API
+      - name: Upload to Maven Central
+        run: |
+          curl -v -X POST \
+            -u "${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}:${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}" \
+            -H "Content-Type: application/zip" \
+            --data-binary @shared/build/distributions/bundle.zip \
+            https://central.sonatype.com/api/v1/publisher/upload

@@ -3,7 +3,7 @@ import org.gradle.api.tasks.bundling.Zip
 tasks.register<Zip>("bundleReleaseArtifacts") {
     group = "publishing"
 
-    dependsOn("publishAllPublicationsToMavenLocal")
+    dependsOn("publishToMavenLocal")
 
     val m2 = layout.buildDirectory.dir("localMavenRepo")
 

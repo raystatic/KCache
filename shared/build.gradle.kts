@@ -27,7 +27,13 @@ kotlin {
         }
 
         val androidMain by getting
-        val iosMain by creating { dependsOn(commonMain) }
+        // ------ Correct iOS source set hierarchy ------
+        val iosMain by creating {
+            dependsOn(commonMain)
+        }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+
         val jvmMain by getting
     }
 }
@@ -49,6 +55,13 @@ android {
         }
     }
 }
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
 
 /* ---------- PUBLISHING METADATA ---------- */
 publishing {

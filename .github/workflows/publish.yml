@@ -1,43 +1,50 @@
-name: Publish to Maven Central (New API)
+name: Publish KMP Library (New Maven Central API)
 
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
-      - uses: gradle/actions/setup-gradle@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Import GPG key
+      # ---- IMPORT GPG KEY ----
+      - name: Import GPG private key
         run: |
           echo "$GPG_PRIVATE_KEY" > private.key
           gpg --batch --yes --import private.key
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      # Build the bundle.zip (required by new API)
-      - name: Build bundle
-        run: ./gradlew :shared:bundleReleaseArtifacts
+      - name: Verify GPG Keys
+        run: gpg --list-secret-keys --keyid-format=long
+
+      # ---- BUILD & BUNDLE ----
+      - name: Build bundle.zip
+        run: ./gradlew :shared:createCentralBundle --stacktrace --no-daemon
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
 
-      # Upload using NEW API
-      - name: Upload to Maven Central
+      # ---- UPLOAD USING NEW API ----
+      - name: Upload to Sonatype Central
         run: |
           curl -v -X POST \
             -u "${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}:${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}" \
             -H "Content-Type: application/zip" \
             --data-binary @shared/build/distributions/bundle.zip \
-            https://central.sonatype.com/api/v1/publisher/upload
+            "https://central.sonatype.com/api/v1/publisher/upload"

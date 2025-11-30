@@ -7,7 +7,9 @@ plugins {
 }
 
 kotlin {
-    androidTarget()
+    android {
+        publishLibraryVariants("release")
+    }
 
     iosArm64()
     iosSimulatorArm64()
@@ -20,33 +22,18 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
             }
         }
+
         val androidMain by getting
         val iosMain by creating { dependsOn(commonMain) }
         val jvmMain by getting
     }
 }
 
-// JVM TARGET FIX — Kotlin 1.9.x + AGP 8.x compatible
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
-    kotlinOptions.jvmTarget = "17"
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions.jvmTarget = "17"
-}
-
 android {
     namespace = "io.github.raystatic.kcache"
     compileSdk = 34
 
-    defaultConfig {
-        minSdk = 21
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+    defaultConfig { minSdk = 21 }
 
     publishing {
         singleVariant("release") {
@@ -55,8 +42,10 @@ android {
     }
 }
 
+/* ---------- PUBLISHING METADATA ---------- */
 publishing {
     publications.withType<MavenPublication>().configureEach {
+
         pom {
             name.set("KCache")
             description.set("Kotlin Multiplatform File Cache with LRU and TTL")
@@ -79,22 +68,34 @@ publishing {
             scm {
                 url.set("https://github.com/raystatic/KCache")
                 connection.set("scm:git:https://github.com/raystatic/KCache.git")
-                developerConnection.set("scm:git:ssh://github.com:raystatic/KCache.git")
+                developerConnection.set("scm:git:https://github.com/raystatic/KCache.git")
             }
         }
     }
 }
 
+/* ---------- GPG SIGNING ---------- */
 signing {
     val key = System.getenv("GPG_PRIVATE_KEY")
-    val pwd = System.getenv("GPG_PRIVATE_KEY_PASSWORD")
+    val pass = System.getenv("GPG_PRIVATE_KEY_PASSWORD")
 
-    if (key != null && pwd != null) {
-        useInMemoryPgpKeys(key, pwd)
+    if (!key.isNullOrBlank() && !pass.isNullOrBlank()) {
+        useInMemoryPgpKeys(key, pass)
         sign(publishing.publications)
     } else {
-        println("⚠️ GPG private key not configured — signing skipped")
+        println("⚠️ GPG key missing, signing skipped.")
     }
 }
 
-apply(from = rootProject.file("shared/bundleArtifacts.gradle.kts"))
+/* ---------- CREATE BUNDLE FOR NEW API ---------- */
+tasks.register<Zip>("createCentralBundle") {
+
+    dependsOn("publishToMavenLocal")
+
+    archiveFileName.set("bundle.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+
+    from("${rootProject.layout.buildDirectory}/localMaven") {
+        include("io/github/raystatic/**")
+    }
+}

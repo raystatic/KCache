@@ -45,9 +45,10 @@ android {
 
 publishing {
     publications.withType<MavenPublication>().configureEach {
+
         pom {
             name.set("KCache")
-            description.set("Kotlin Multiplatform File Cache with LRU and TTL")
+            description.set("Kotlin Multiplatform File Cache with LRU & TTL support")
             url.set("https://github.com/raystatic/KCache")
 
             licenses {
@@ -67,7 +68,7 @@ publishing {
             scm {
                 url.set("https://github.com/raystatic/KCache")
                 connection.set("scm:git:https://github.com/raystatic/KCache.git")
-                developerConnection.set("scm:git:ssh://github.com:raystatic/KCache.git")
+                developerConnection.set("scm:git:https://github.com/raystatic/KCache.git")
             }
         }
     }
@@ -80,3 +81,6 @@ signing {
     )
     sign(publishing.publications)
 }
+
+// Include bundle task
+apply(from = rootProject.file("shared/bundleArtifacts.gradle.kts"))

@@ -113,10 +113,13 @@ tasks.register<Zip>("createCentralBundle") {
 
     dependsOn("publishToMavenLocal")
 
-    archiveFileName.set("bundle.zip")
-    destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+    val localRepo = layout.buildDirectory.dir("localMaven")
 
-    from("${rootProject.layout.buildDirectory}/localMaven") {
+    archiveFileName.set("bundle.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("central"))
+
+    from(localRepo) {
         include("io/github/raystatic/**")
     }
 }
+

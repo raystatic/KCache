@@ -41,10 +41,12 @@ jobs:
           GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
 
       # ---- UPLOAD USING NEW API ----
-      - name: Upload to Sonatype Central
+      - name: Upload bundle to Sonatype Central
         run: |
           curl -v -X POST \
-            -u "${{ secrets.MAVEN_CENTRAL_TOKEN_USERNAME }}:${{ secrets.MAVEN_CENTRAL_TOKEN_PASSWORD }}" \
+            -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/zip" \
-            --data-binary @shared/build/distributions/bundle.zip \
-            "https://central.sonatype.com/api/v1/publisher/upload"
+            --data-binary @shared/build/central/bundle.zip \
+            https://central.sonatype.com/api/v1/publisher/upload
+        env:
+          TOKEN: ${{ secrets.MAVEN_CENTRAL_PUBLISH_TOKEN }}

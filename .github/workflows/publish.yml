@@ -36,7 +36,7 @@ jobs:
 
       # Build & Bundle
       - name: Build publications and bundle artifacts
-        run: ./gradlew publishAllPublicationsToMavenLocal bundleReleaseArtifacts
+        run: ./gradlew :shared:publishAllPublicationsToMavenLocal :shared:bundleReleaseArtifacts
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}

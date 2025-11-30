@@ -96,3 +96,5 @@ signing {
         println("⚠️ GPG private key not configured — signing skipped")
     }
 }
+
+apply(from = rootProject.file("shared/bundleArtifacts.gradle.kts"))
